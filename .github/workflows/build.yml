@@ -1,0 +1,58 @@
+name: Build and Release Module
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Download module-api
+        run: |
+          mkdir -p libs
+          gh release download latest \
+            --repo RedDevz/paper-module-framework \
+            --pattern "module-api-1.0.0.jar" \
+            --dir libs
+        env:
+          GH_TOKEN: ${{ secrets.FRAMEWORK_TOKEN }}
+
+      - name: Build module jar
+        run: ./gradlew shadowJar --no-daemon
+
+      - name: Delete old latest release
+        run: gh release delete latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release latest jar
+        run: |
+          gh release create latest \
+            build/libs/tpa-module.jar \
+            --title "Latest Build (${{ github.sha }})" \
+            --notes "Auto-built from commit [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" \
+            --prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
