@@ -45,7 +45,7 @@ jobs:
       - name: Delete old latest release
         run: gh release delete latest --yes --cleanup-tag || true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FRAMEWORK_TOKEN }}
 
       - name: Release latest jar
         run: |
@@ -55,4 +55,4 @@ jobs:
             --notes "Auto-built from commit [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" \
             --prerelease
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FRAMEWORK_TOKEN }}
